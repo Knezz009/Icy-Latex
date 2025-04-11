@@ -1,3 +1,5 @@
+// 🎮 game.js
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -25,13 +27,14 @@ let player = {
 
 let keys = {};
 let platforms = [];
+let platformSpacing = 100;
+let platformId = 0;
 
-function createPlatforms() {
+function createInitialPlatforms() {
   platforms = [];
 
-  // Start platform (full width)
   platforms.push({
-    id: 0,
+    id: platformId++,
     x: 0,
     y: 550,
     width: canvas.width,
@@ -40,21 +43,28 @@ function createPlatforms() {
     isStart: true
   });
 
-  let spacing = 100;
-  let totalPlatforms = 30;
+  for (let i = 1; i <= 20; i++) {
+    generateNewPlatform(550 - i * platformSpacing);
+  }
+}
 
-  for (let i = 1; i <= totalPlatforms; i++) {
-    let y = 550 - i * spacing;
-    let x = Math.floor(Math.random() * (canvas.width - 100));
-    platforms.push({
-      id: i,
-      x: x,
-      y: y,
-      width: 100,
-      height: 10,
-      touched: false,
-      isStart: false
-    });
+function generateNewPlatform(y) {
+  const x = Math.floor(Math.random() * (canvas.width - 100));
+  platforms.push({
+    id: platformId++,
+    x: x,
+    y: y,
+    width: 100,
+    height: 10,
+    touched: false,
+    isStart: false
+  });
+}
+
+function checkForPlatformGeneration() {
+  const highestY = Math.min(...platforms.map(p => p.y));
+  while (highestY > player.y - 600) {
+    generateNewPlatform(highestY - platformSpacing);
   }
 }
 
@@ -70,14 +80,14 @@ function resetGame() {
   player.vx = 0;
   player.vy = 0;
 
-  createPlatforms();
+  platformId = 0;
+  createInitialPlatforms();
   loop();
 }
 
 function update(delta) {
   if (gameOver) return;
 
-  // Timer for start platform
   if (startPlatformVisible) {
     startPlatformTimer += delta;
     if (startPlatformTimer >= 3000) {
@@ -94,7 +104,8 @@ function update(delta) {
   player.y += player.vy;
   player.grounded = false;
 
-  // Platform collisions
+  checkForPlatformGeneration();
+
   platforms.forEach(p => {
     if (!p.isStart || startPlatformVisible) {
       if (
@@ -119,7 +130,6 @@ function update(delta) {
     cameraY = player.y - 200;
   }
 
-  // Bounce off walls
   if (player.x <= 0 || player.x + player.width >= canvas.width) {
     player.vy = -20;
   }
@@ -140,7 +150,6 @@ function drawBackground() {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Tire-like pattern
   ctx.strokeStyle = "#330000";
   ctx.lineWidth = 1;
   for (let i = 0; i < canvas.height; i += 40) {
@@ -187,16 +196,16 @@ function drawGameOver() {
   ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "white";
-  ctx.font = "30px monospace";
+  ctx.font = "28px monospace";
   ctx.textAlign = "center";
-  ctx.fillText("KONIEC GRY", canvas.width / 2, canvas.height / 2 - 30);
-  ctx.fillText(`Wynik: ${score} pięter`, canvas.width / 2, canvas.height / 2 + 10);
+  ctx.fillText("KONIEC GRY", canvas.width / 2, canvas.height / 2 - 40);
+  ctx.fillText(`Wynik: ${score}`, canvas.width / 2, canvas.height / 2);
 
   ctx.fillStyle = "#ff0000";
-  ctx.fillRect(canvas.width / 2 - 70, canvas.height / 2 + 40, 140, 40);
+  ctx.fillRect(canvas.width / 2 - 70, canvas.height / 2 + 30, 140, 40);
   ctx.fillStyle = "#fff";
   ctx.font = "18px monospace";
-  ctx.fillText("ZAGRAJ PONOWNIE", canvas.width / 2, canvas.height / 2 + 68);
+  ctx.fillText("ZAGRAJ PONOWNIE", canvas.width / 2, canvas.height / 2 + 58);
 }
 
 canvas.addEventListener("click", (e) => {
@@ -206,8 +215,8 @@ canvas.addEventListener("click", (e) => {
   if (
     x >= canvas.width / 2 - 70 &&
     x <= canvas.width / 2 + 70 &&
-    y >= canvas.height / 2 + 40 &&
-    y <= canvas.height / 2 + 80
+    y >= canvas.height / 2 + 30 &&
+    y <= canvas.height / 2 + 70
   ) {
     resetGame();
   }
@@ -233,5 +242,5 @@ document.addEventListener("keyup", e => {
   keys[e.code] = false;
 });
 
-createPlatforms();
+createInitialPlatforms();
 loop();
