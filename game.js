@@ -29,7 +29,7 @@ let platforms = [];
 function createPlatforms() {
   platforms = [];
 
-  // Startowa platforma na całą szerokość
+  // Start platform (full width)
   platforms.push({
     id: 0,
     x: 0,
@@ -77,7 +77,7 @@ function resetGame() {
 function update(delta) {
   if (gameOver) return;
 
-  // Startowa platforma znika po 3 sekundach
+  // Timer for start platform
   if (startPlatformVisible) {
     startPlatformTimer += delta;
     if (startPlatformTimer >= 3000) {
@@ -94,6 +94,7 @@ function update(delta) {
   player.y += player.vy;
   player.grounded = false;
 
+  // Platform collisions
   platforms.forEach(p => {
     if (!p.isStart || startPlatformVisible) {
       if (
@@ -118,6 +119,7 @@ function update(delta) {
     cameraY = player.y - 200;
   }
 
+  // Bounce off walls
   if (player.x <= 0 || player.x + player.width >= canvas.width) {
     player.vy = -20;
   }
@@ -138,8 +140,9 @@ function drawBackground() {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.strokeStyle = "#300";
-  ctx.lineWidth = 2;
+  // Tire-like pattern
+  ctx.strokeStyle = "#330000";
+  ctx.lineWidth = 1;
   for (let i = 0; i < canvas.height; i += 40) {
     ctx.beginPath();
     ctx.moveTo(0, i);
@@ -147,16 +150,11 @@ function drawBackground() {
     ctx.stroke();
   }
 
-  for (let i = 0; i < 5; i++) {
+  ctx.fillStyle = "#440000";
+  for (let i = 0; i < 20; i++) {
     ctx.beginPath();
-    ctx.arc(
-      Math.random() * canvas.width,
-      Math.random() * canvas.height,
-      20 + Math.random() * 30,
-      0,
-      Math.PI * 2
-    );
-    ctx.stroke();
+    ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, 3, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
