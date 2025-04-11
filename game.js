@@ -1,8 +1,8 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-canvas.width = 80;
-canvas.height = 100;
+canvas.width = 600;
+canvas.height = 800;
 
 let cameraY = 0;
 let score = 0;
