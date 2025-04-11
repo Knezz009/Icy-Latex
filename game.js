@@ -7,7 +7,8 @@ canvas.height = 600;
 let cameraY = 0;
 let score = 0;
 let gameOver = false;
-let lastPlatformTouched = null;
+let startPlatformTimer = 0;
+let startPlatformVisible = true;
 
 let player = {
   x: 180,
@@ -17,40 +18,72 @@ let player = {
   vx: 0,
   vy: 0,
   speed: 5,
-  gravity: 0.8,
-  jumpPower: -15,
+  gravity: 0.7,
+  jumpPower: -22,
   grounded: false,
 };
 
 let keys = {};
+let platforms = [];
 
-let platforms = [
-  { id: 1, x: 150, y: 550, width: 100, height: 10, touched: false },
-  { id: 2, x: 200, y: 400, width: 100, height: 10, touched: false },
-  { id: 3, x: 100, y: 250, width: 100, height: 10, touched: false }
-];
+function createPlatforms() {
+  platforms = [];
+
+  // Startowa platforma na całą szerokość
+  platforms.push({
+    id: 0,
+    x: 0,
+    y: 550,
+    width: canvas.width,
+    height: 10,
+    touched: false,
+    isStart: true
+  });
+
+  let spacing = 100;
+  let totalPlatforms = 30;
+
+  for (let i = 1; i <= totalPlatforms; i++) {
+    let y = 550 - i * spacing;
+    let x = Math.floor(Math.random() * (canvas.width - 100));
+    platforms.push({
+      id: i,
+      x: x,
+      y: y,
+      width: 100,
+      height: 10,
+      touched: false,
+      isStart: false
+    });
+  }
+}
 
 function resetGame() {
   cameraY = 0;
   score = 0;
   gameOver = false;
-  lastPlatformTouched = null;
+  startPlatformTimer = 0;
+  startPlatformVisible = true;
 
   player.x = 180;
   player.y = 500;
   player.vx = 0;
   player.vy = 0;
 
-  platforms = [
-    { id: 1, x: 150, y: 550, width: 100, height: 10, touched: false },
-    { id: 2, x: 200, y: 400, width: 100, height: 10, touched: false },
-    { id: 3, x: 100, y: 250, width: 100, height: 10, touched: false }
-  ];
+  createPlatforms();
   loop();
 }
 
-function update() {
+function update(delta) {
   if (gameOver) return;
+
+  // Startowa platforma znika po 3 sekundach
+  if (startPlatformVisible) {
+    startPlatformTimer += delta;
+    if (startPlatformTimer >= 3000) {
+      startPlatformVisible = false;
+    }
+  }
 
   player.vx = 0;
   if (keys["ArrowLeft"] || keys["KeyA"]) player.vx = -player.speed;
@@ -62,19 +95,21 @@ function update() {
   player.grounded = false;
 
   platforms.forEach(p => {
-    if (
-      player.x < p.x + p.width &&
-      player.x + player.width > p.x &&
-      player.y + player.height < p.y + p.height &&
-      player.y + player.height + player.vy >= p.y
-    ) {
-      player.y = p.y - player.height;
-      player.vy = 0;
-      player.grounded = true;
+    if (!p.isStart || startPlatformVisible) {
+      if (
+        player.x < p.x + p.width &&
+        player.x + player.width > p.x &&
+        player.y + player.height < p.y + p.height &&
+        player.y + player.height + player.vy >= p.y
+      ) {
+        player.y = p.y - player.height;
+        player.vy = 0;
+        player.grounded = true;
 
-      if (!p.touched) {
-        p.touched = true;
-        score += 1;
+        if (!p.touched) {
+          p.touched = true;
+          score += 1;
+        }
       }
     }
   });
@@ -126,15 +161,15 @@ function drawBackground() {
 }
 
 function drawPlatform(p) {
-  const grad = ctx.createLinearGradient(p.x, p.y, p.x + p.width, p.y);
-  grad.addColorStop(0, "#ff3333");
-  grad.addColorStop(1, "#990000");
-  ctx.fillStyle = grad;
-  ctx.fillRect(p.x, p.y, p.width, p.height);
-
-  // cień
-  ctx.strokeStyle = "#550000";
-  ctx.strokeRect(p.x, p.y, p.width, p.height);
+  if (!p.isStart || startPlatformVisible) {
+    const grad = ctx.createLinearGradient(p.x, p.y, p.x + p.width, p.y);
+    grad.addColorStop(0, "#ff3333");
+    grad.addColorStop(1, "#990000");
+    ctx.fillStyle = grad;
+    ctx.fillRect(p.x, p.y, p.width, p.height);
+    ctx.strokeStyle = "#550000";
+    ctx.strokeRect(p.x, p.y, p.width, p.height);
+  }
 }
 
 function drawPlayer() {
@@ -168,7 +203,6 @@ function drawGameOver() {
 
 canvas.addEventListener("click", (e) => {
   if (!gameOver) return;
-
   const x = e.offsetX;
   const y = e.offsetY;
   if (
@@ -181,25 +215,11 @@ canvas.addEventListener("click", (e) => {
   }
 });
 
-function draw() {
-  drawBackground();
-
-  ctx.save();
-  ctx.translate(0, -cameraY);
-
-  drawPlayer();
-  platforms.forEach(drawPlatform);
-
-  ctx.restore();
-  drawScore();
-
-  if (gameOver) {
-    drawGameOver();
-  }
-}
-
-function loop() {
-  update();
+let lastTime = 0;
+function loop(timestamp = 0) {
+  const delta = timestamp - lastTime;
+  lastTime = timestamp;
+  update(delta);
   draw();
   if (!gameOver) requestAnimationFrame(loop);
 }
@@ -215,4 +235,5 @@ document.addEventListener("keyup", e => {
   keys[e.code] = false;
 });
 
+createPlatforms();
 loop();
