@@ -277,18 +277,20 @@ const data = {
 };
 fetch("https://script.google.com/macros/s/AKfycbzhyH7KCGgy7L9W0NbDB7t2FQ9a8HelpZHsU2PyQ137-qEFRTYlDJhngRYrmBNiRLIHvA/exec", {
   method: "POST",
-  body: JSON.stringify(data),
   headers: {
-    "Content-Type": "application/json"
-  }
+    "Content-Type": "text/plain;charset=utf-8"
+  },
+  body: JSON.stringify({ nick, wynik: score })
 })
-.then(response => response.json())
-.then(data => {
-  console.log("Wynik wysłany:", data);
+.then(res => res.text())
+.then(() => {
+  document.getElementById("responseMsg").innerText = "Wynik wysłany!";
 })
-.catch(error => {
-  console.error("Błąd wysyłania:", error);
+.catch((err) => {
+  console.error("Błąd przy fetch:", err);
+  document.getElementById("responseMsg").innerText = "Błąd wysyłania 😢";
 });
+
 
 createInitialPlatforms();
 loop();
