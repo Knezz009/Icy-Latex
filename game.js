@@ -37,7 +37,6 @@ function createInitialPlatforms() {
     y: 550,
     width: canvas.width,
     height: 10,
-    touched: false,
     isStart: true
   });
 
@@ -54,15 +53,18 @@ function generateNewPlatform(y) {
     y: y,
     width: 100,
     height: 10,
-    touched: false,
     isStart: false
   });
 }
 
 function checkForPlatformGeneration() {
-  const highestY = Math.min(...platforms.map(p => p.y));
-  while (highestY > player.y - 600) {
-    generateNewPlatform(highestY - platformSpacing);
+  let highestY = Math.min(...platforms.map(p => p.y));
+  let limit = 0;
+
+  while (highestY > player.y - 600 && limit < 50) {
+    highestY -= platformSpacing;
+    generateNewPlatform(highestY);
+    limit++;
   }
 }
 
@@ -119,14 +121,15 @@ function update(delta) {
         player.y = p.y - player.height;
         player.vy = 0;
         player.grounded = true;
-
-        if (!p.touched) {
-          p.touched = true;
-          score += 1;
-        }
       }
     }
   });
+
+  // Punktacja co 40px
+  let floorsPassed = Math.floor((550 - player.y) / 40);
+  if (floorsPassed > score) {
+    score = floorsPassed;
+  }
 
   if (player.y < cameraY + 200) {
     cameraY = player.y - 200;
@@ -261,7 +264,7 @@ document.addEventListener("keyup", e => {
   keys[e.code] = false;
 });
 
-// ✅ ZAPIS WYNIKU DO GOOGLE SHEETS
+// API do wysyłki wyniku do Google Sheets
 function sendScore() {
   const nick = document.getElementById("nickInput").value.trim();
   if (!nick) {
@@ -269,7 +272,7 @@ function sendScore() {
     return;
   }
 
-  fetch("https://script.google.com/macros/s/AKfycbzK98X0hfhN3WjZWFbbHS7ArJ0kfDE13HXoxKkmdOBQzqNph_g4csEnqIv1HyPMzFFxvQ/exec", {
+  fetch("https://script.google.com/macros/s/AKfycbz8wzLAXKsUsjtMVgfWuna2_qonIY1R8eb_52N3PtWZh8Sb_lUtovvTxV694uLTtIov5g/exec", {
     method: "POST",
     body: JSON.stringify({ nick, score }),
     headers: {
