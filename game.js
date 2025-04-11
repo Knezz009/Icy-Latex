@@ -29,8 +29,8 @@ let platforms = [
 
 function update() {
   player.vx = 0;
-  if (keys["ArrowLeft"] || keys["a"]) player.vx = -player.speed;
-  if (keys["ArrowRight"] || keys["d"]) player.vx = player.speed;
+  if (keys["ArrowLeft"] || keys["KeyA"]) player.vx = -player.speed;
+  if (keys["ArrowRight"] || keys["KeyD"]) player.vx = player.speed;
 
   player.x += player.vx;
   player.vy += player.gravity;
@@ -62,14 +62,14 @@ function update() {
 }
 
 function drawBackground() {
-  // Czarne tło z czerwonymi detalami
+  // Gradient
   let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
   gradient.addColorStop(0, "#111");
   gradient.addColorStop(1, "#000");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Czerwone linie ozdobne
+  // Czerwone linie
   ctx.strokeStyle = "#400";
   ctx.lineWidth = 1;
   for (let i = 0; i < canvas.height; i += 40) {
@@ -98,7 +98,6 @@ function drawPlayer() {
 function draw() {
   drawBackground();
 
-  // Przesuwamy canvas w pionie (kamera)
   ctx.save();
   ctx.translate(0, -cameraY);
 
@@ -119,15 +118,16 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
+// 💡 OBSŁUGA KLAWISZY
 document.addEventListener("keydown", e => {
-  keys[e.key] = true;
+  keys[e.code] = true;
   if (e.code === "Space" && player.grounded) {
     player.vy = player.jumpPower;
   }
 });
 
 document.addEventListener("keyup", e => {
-  keys[e.key] = false;
+  keys[e.code] = false;
 });
 
 loop();
