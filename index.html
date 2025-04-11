@@ -2,12 +2,52 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Icy Latex</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Icy-Latex</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      font-family: monospace;
+    }
+    canvas {
+      border: 2px solid white;
+      margin-top: 20px;
+    }
+    #formContainer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 10px;
+    }
+    #nickInput {
+      padding: 6px;
+      font-size: 16px;
+      margin: 5px;
+    }
+    #responseMsg {
+      color: white;
+      font-size: 14px;
+    }
+    button {
+      padding: 6px 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+  <div id="formContainer">
+    <input id="nickInput" placeholder="Twój nick" />
+    <button onclick="sendScore()">Wyślij wynik</button>
+    <p id="responseMsg"></p>
+  </div>
+
   <script src="game.js"></script>
 </body>
 </html>
