@@ -58,13 +58,12 @@ function generateNewPlatform(y) {
 }
 
 function checkForPlatformGeneration() {
-  let highestY = Math.min(...platforms.map(p => p.y));
-  let limit = 0;
+  const margin = 400; // odległość, przy której generujemy nowe
+  const highestPlatform = Math.min(...platforms.map(p => p.y));
 
-  while (highestY > player.y - 600 && limit < 50) {
-    highestY -= platformSpacing;
-    generateNewPlatform(highestY);
-    limit++;
+  if (player.y - margin < highestPlatform) {
+    const newY = highestPlatform - platformSpacing;
+    generateNewPlatform(newY);
   }
 }
 
