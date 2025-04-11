@@ -269,7 +269,7 @@ function sendScore() {
     return;
   }
 
-  fetch("https://script.google.com/macros/s/AKfycbz8wzLAXKsUsjtMVgfWuna2_qonIY1R8eb_52N3PtWZh8Sb_lUtovvTxV694uLTtIov5g/exec", {
+  fetch("https://script.google.com/macros/s/AKfycbzK98X0hfhN3WjZWFbbHS7ArJ0kfDE13HXoxKkmdOBQzqNph_g4csEnqIv1HyPMzFFxvQ/exec", {
     method: "POST",
     body: JSON.stringify({ nick, score }),
     headers: {
