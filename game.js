@@ -271,21 +271,24 @@ function sendScore() {
     return;
   }
 
-  fetch("https://script.google.com/macros/s/AKfycbzK98X0hfhN3WjZWFbbHS7ArJ0kfDE13HXoxKkmdOBQzqNph_g4csEnqIv1HyPMzFFxvQ/exec", {
-    method: "POST",
-    body: JSON.stringify({ nick, score }),
-    headers: {
-      "Content-Type": "application/json"
-    }
-  })
-    .then(res => res.text())
-    .then(() => {
-      document.getElementById("responseMsg").innerText = "Wynik wysłany!";
-    })
-    .catch(() => {
-      document.getElementById("responseMsg").innerText = "Błąd wysyłania 😢";
-    });
-}
+const data = {
+  nick: playerName,
+  wynik: floorsAchieved
+};
+fetch("https://script.google.com/macros/s/AKfycbzhyH7KCGgy7L9W0NbDB7t2FQ9a8HelpZHsU2PyQ137-qEFRTYlDJhngRYrmBNiRLIHvA/exec", {
+  method: "POST",
+  body: JSON.stringify(data),
+  headers: {
+    "Content-Type": "application/json"
+  }
+})
+.then(response => response.json())
+.then(data => {
+  console.log("Wynik wysłany:", data);
+})
+.catch(error => {
+  console.error("Błąd wysyłania:", error);
+});
 
 createInitialPlatforms();
 loop();
