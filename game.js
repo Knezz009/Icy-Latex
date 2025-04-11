@@ -84,6 +84,24 @@ function resetGame() {
   document.getElementById("nickInput").value = "";
 
   createInitialPlatforms();
+  function draw() {
+  drawBackground();
+
+  ctx.save();
+  ctx.translate(0, -cameraY);
+
+  platforms.forEach(drawPlatform);
+  drawPlayer();
+
+  ctx.restore();
+
+  drawScore();
+
+  if (gameOver) {
+    drawGameOver();
+  }
+}
+
   loop();
 }
 
