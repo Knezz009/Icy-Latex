@@ -1,6 +1,26 @@
+// game.js - Icy-Latex z Firebase, rankingiem, restartem na spacji i spadającymi platformami
+
+// FIREBASE SETUP
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBzsCNpz3ZToHdZuLuFsC_zezSDyZJJfho",
+  authDomain: "latteice.firebaseapp.com",
+  databaseURL: "https://latteice-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "latteice",
+  storageBucket: "latteice.firebasestorage.app",
+  messagingSenderId: "249160867596",
+  appId: "1:249160867596:web:0b200fe387a73b071e7329",
+  measurementId: "G-JELC72BE88"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const scoresRef = ref(db, "scores");
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-
 canvas.width = 600;
 canvas.height = 800;
 
@@ -11,15 +31,15 @@ let startPlatformTimer = 0;
 let startPlatformVisible = true;
 
 let player = {
-  x: 180,
-  y: 500,
-  width: 40,
-  height: 40,
+  x: 280,
+  y: 700,
+  width: 35,
+  height: 35,
   vx: 0,
   vy: 0,
-  speed: 5,
+  speed: 4,
   gravity: 0.7,
-  jumpPower: -22,
+  jumpPower: -20,
   grounded: false,
 };
 
@@ -27,45 +47,31 @@ let keys = {};
 let platforms = [];
 let platformSpacing = 100;
 let platformId = 0;
-
 let canWallBounceLeft = true;
 let canWallBounceRight = true;
 
+function getPlatformFallSpeed() {
+  if (score < 100) return 0.1;
+  if (score < 300) return 0.4;
+  if (score < 500) return 0.7;
+  return 1.2;
+}
+
 function createInitialPlatforms() {
   platforms = [];
-  platforms.push({
-    id: platformId++,
-    x: 0,
-    y: 550,
-    width: canvas.width,
-    height: 10,
-    isStart: true
-  });
-
-  for (let i = 1; i <= 20; i++) {
-    generateNewPlatform(550 - i * platformSpacing);
-  }
+  platforms.push({ id: platformId++, x: 0, y: 750, width: canvas.width, height: 10, isStart: true, shake: false });
+  for (let i = 1; i <= 20; i++) generateNewPlatform(750 - i * platformSpacing);
 }
 
 function generateNewPlatform(y) {
   const x = Math.floor(Math.random() * (canvas.width - 100));
-  platforms.push({
-    id: platformId++,
-    x: x,
-    y: y,
-    width: 100,
-    height: 10,
-    isStart: false
-  });
+  platforms.push({ id: platformId++, x, y, width: 100, height: 10, isStart: false, shake: false, shakeOffset: 0 });
 }
 
 function checkForPlatformGeneration() {
   const margin = 400;
   const highestPlatform = Math.min(...platforms.map(p => p.y));
-  if (player.y - margin < highestPlatform) {
-    const newY = highestPlatform - platformSpacing;
-    generateNewPlatform(newY);
-  }
+  if (player.y - margin < highestPlatform) generateNewPlatform(highestPlatform - platformSpacing);
 }
 
 function resetGame() {
@@ -74,17 +80,14 @@ function resetGame() {
   gameOver = false;
   startPlatformTimer = 0;
   startPlatformVisible = true;
-
-  player.x = 180;
-  player.y = 500;
+  player.x = 280;
+  player.y = 700;
   player.vx = 0;
   player.vy = 0;
-
   platformId = 0;
   document.getElementById("formContainer").style.display = "none";
   document.getElementById("responseMsg").innerText = "";
   document.getElementById("nickInput").value = "";
-
   createInitialPlatforms();
   loop();
 }
@@ -94,21 +97,30 @@ function update(delta) {
 
   if (startPlatformVisible) {
     startPlatformTimer += delta;
-    if (startPlatformTimer >= 3000) {
-      startPlatformVisible = false;
-    }
+    if (startPlatformTimer >= 10000) startPlatformVisible = false;
   }
 
   player.vx = 0;
   if (keys["ArrowLeft"] || keys["KeyA"]) player.vx = -player.speed;
   if (keys["ArrowRight"] || keys["KeyD"]) player.vx = player.speed;
-
   player.x += player.vx;
   player.vy += player.gravity;
   player.y += player.vy;
   player.grounded = false;
 
   checkForPlatformGeneration();
+
+  const fallSpeed = getPlatformFallSpeed();
+  platforms.forEach(p => {
+    p.y += fallSpeed;
+    if (p.y > cameraY + canvas.height - 150) {
+      p.shake = true;
+      p.shakeOffset = Math.sin(Date.now() / 50 + p.id) * 2;
+    } else {
+      p.shake = false;
+      p.shakeOffset = 0;
+    }
+  });
 
   platforms.forEach(p => {
     if (!p.isStart || startPlatformVisible) {
@@ -125,25 +137,18 @@ function update(delta) {
     }
   });
 
-  let floorsPassed = Math.floor((550 - player.y) / 40);
-  if (floorsPassed > score) {
-    score = floorsPassed;
-  }
+  let floorsPassed = Math.floor((750 - player.y) / 40);
+  if (floorsPassed > score) score = floorsPassed;
 
-  if (player.y < cameraY + 200) {
-    cameraY = player.y - 200;
-  }
+  if (player.y < cameraY + 200) cameraY = player.y - 200;
 
-  // Odbicia od ścian z blokadą wielokrotnego boosta
   if (player.x <= 0) {
     if (canWallBounceLeft) {
       player.vy = -20;
       canWallBounceLeft = false;
     }
     player.x = 0;
-  } else {
-    canWallBounceLeft = true;
-  }
+  } else canWallBounceLeft = true;
 
   if (player.x + player.width >= canvas.width) {
     if (canWallBounceRight) {
@@ -151,49 +156,22 @@ function update(delta) {
       canWallBounceRight = false;
     }
     player.x = canvas.width - player.width;
-  } else {
-    canWallBounceRight = true;
-  }
+  } else canWallBounceRight = true;
 
-  if (player.y > cameraY + canvas.height + 100) {
-    gameOver = true;
-  }
-}
-
-function drawBackground() {
-  let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, "#1a0000");
-  gradient.addColorStop(0.5, "#0d0d0d");
-  gradient.addColorStop(1, "#000000");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = "#330000";
-  ctx.lineWidth = 1;
-  for (let i = 0; i < canvas.height; i += 40) {
-    ctx.beginPath();
-    ctx.moveTo(0, i);
-    ctx.lineTo(canvas.width, i);
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = "#440000";
-  for (let i = 0; i < 20; i++) {
-    ctx.beginPath();
-    ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, 3, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  if (player.y > cameraY + canvas.height + 100) gameOver = true;
+  platforms = platforms.filter(p => p.y < cameraY + canvas.height + 100);
 }
 
 function drawPlatform(p) {
+  const x = p.x + (p.shakeOffset || 0);
   if (!p.isStart || startPlatformVisible) {
-    const grad = ctx.createLinearGradient(p.x, p.y, p.x + p.width, p.y);
+    const grad = ctx.createLinearGradient(x, p.y, x + p.width, p.y);
     grad.addColorStop(0, "#ff3333");
     grad.addColorStop(1, "#990000");
     ctx.fillStyle = grad;
-    ctx.fillRect(p.x, p.y, p.width, p.height);
+    ctx.fillRect(x, p.y, p.width, p.height);
     ctx.strokeStyle = "#550000";
-    ctx.strokeRect(p.x, p.y, p.width, p.height);
+    ctx.strokeRect(x, p.y, p.width, p.height);
   }
 }
 
@@ -226,14 +204,30 @@ function drawGameOver() {
   ctx.fillText("ZAGRAJ PONOWNIE", canvas.width / 2, canvas.height / 2 + 58);
 
   drawSubmitForm();
+  drawScoreBoard();
 }
 
 function drawSubmitForm() {
   document.getElementById("formContainer").style.display = "flex";
 }
 
+function drawScoreBoard() {
+  const list = document.getElementById("scoreList");
+  list.innerHTML = "<h3>Top 10:</h3>";
+  fetch("https://latteice-default-rtdb.europe-west1.firebasedatabase.app/scores.json")
+    .then(res => res.json())
+    .then(data => {
+      const entries = Object.values(data || {}).sort((a, b) => b.wynik - a.wynik).slice(0, 10);
+      entries.forEach(entry => {
+        const item = document.createElement("div");
+        item.textContent = `${entry.nick}: ${entry.wynik}`;
+        list.appendChild(item);
+      });
+    });
+}
+
 function draw() {
-  drawBackground();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
   ctx.translate(0, -cameraY);
   platforms.forEach(drawPlatform);
@@ -247,29 +241,16 @@ canvas.addEventListener("click", (e) => {
   if (!gameOver) return;
   const x = e.offsetX;
   const y = e.offsetY;
-  if (
-    x >= canvas.width / 2 - 70 &&
-    x <= canvas.width / 2 + 70 &&
-    y >= canvas.height / 2 + 30 &&
-    y <= canvas.height / 2 + 70
-  ) {
+  if (x >= canvas.width / 2 - 70 && x <= canvas.width / 2 + 70 && y >= canvas.height / 2 + 30 && y <= canvas.height / 2 + 70) {
     resetGame();
   }
 });
 
-let lastTime = 0;
-function loop(timestamp = 0) {
-  const delta = timestamp - lastTime;
-  lastTime = timestamp;
-  update(delta);
-  draw();
-  if (!gameOver) requestAnimationFrame(loop);
-}
-
 document.addEventListener("keydown", e => {
   keys[e.code] = true;
-  if (e.code === "Space" && player.grounded) {
-    player.vy = player.jumpPower;
+  if (e.code === "Space") {
+    if (gameOver) resetGame();
+    if (player.grounded) player.vy = player.jumpPower;
   }
 });
 
@@ -283,22 +264,18 @@ function sendScore() {
     document.getElementById("responseMsg").innerText = "Podaj nick.";
     return;
   }
+  const entry = { nick, wynik: score };
+  push(scoresRef, entry);
+  document.getElementById("responseMsg").innerText = "Wynik wysłany!";
+}
 
-  fetch("https://script.google.com/macros/s/AKfycbzhyH7KCGgy7L9W0NbDB7t2FQ9a8HelpZHsU2PyQ137-qEFRTYlDJhngRYrmBNiRLIHvA/exec", {
-    method: "POST",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8"
-    },
-    body: JSON.stringify({ nick, wynik: score })
-  })
-  .then(res => res.text())
-  .then(() => {
-    document.getElementById("responseMsg").innerText = "Wynik wysłany!";
-  })
-  .catch((err) => {
-    console.error("Błąd przy fetch:", err);
-    document.getElementById("responseMsg").innerText = "Błąd wysyłania 😢";
-  });
+let lastTime = 0;
+function loop(timestamp = 0) {
+  const delta = timestamp - lastTime;
+  lastTime = timestamp;
+  update(delta);
+  draw();
+  if (!gameOver) requestAnimationFrame(loop);
 }
 
 createInitialPlatforms();
