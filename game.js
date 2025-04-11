@@ -84,24 +84,6 @@ function resetGame() {
   document.getElementById("nickInput").value = "";
 
   createInitialPlatforms();
-  function draw() {
-  drawBackground();
-
-  ctx.save();
-  ctx.translate(0, -cameraY);
-
-  platforms.forEach(drawPlatform);
-  drawPlayer();
-
-  ctx.restore();
-
-  drawScore();
-
-  if (gameOver) {
-    drawGameOver();
-  }
-}
-
   loop();
 }
 
@@ -234,6 +216,17 @@ function drawSubmitForm() {
   document.getElementById("formContainer").style.display = "flex";
 }
 
+function draw() {
+  drawBackground();
+  ctx.save();
+  ctx.translate(0, -cameraY);
+  platforms.forEach(drawPlatform);
+  drawPlayer();
+  ctx.restore();
+  drawScore();
+  if (gameOver) drawGameOver();
+}
+
 canvas.addEventListener("click", (e) => {
   if (!gameOver) return;
   const x = e.offsetX;
@@ -268,7 +261,7 @@ document.addEventListener("keyup", e => {
   keys[e.code] = false;
 });
 
-// ✅ FUNKCJA: wysyłka wyniku do Google Sheets
+// ✅ ZAPIS WYNIKU DO GOOGLE SHEETS
 function sendScore() {
   const nick = document.getElementById("nickInput").value.trim();
   if (!nick) {
