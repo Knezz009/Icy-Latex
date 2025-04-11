@@ -28,9 +28,11 @@ let platforms = [];
 let platformSpacing = 100;
 let platformId = 0;
 
+let canWallBounceLeft = true;
+let canWallBounceRight = true;
+
 function createInitialPlatforms() {
   platforms = [];
-
   platforms.push({
     id: platformId++,
     x: 0,
@@ -58,9 +60,8 @@ function generateNewPlatform(y) {
 }
 
 function checkForPlatformGeneration() {
-  const margin = 400; // odległość, przy której generujemy nowe
+  const margin = 400;
   const highestPlatform = Math.min(...platforms.map(p => p.y));
-
   if (player.y - margin < highestPlatform) {
     const newY = highestPlatform - platformSpacing;
     generateNewPlatform(newY);
@@ -124,7 +125,6 @@ function update(delta) {
     }
   });
 
-  // Punktacja co 40px
   let floorsPassed = Math.floor((550 - player.y) / 40);
   if (floorsPassed > score) {
     score = floorsPassed;
@@ -134,12 +134,26 @@ function update(delta) {
     cameraY = player.y - 200;
   }
 
-  if (player.x <= 0 || player.x + player.width >= canvas.width) {
-    player.vy = -20;
+  // Odbicia od ścian z blokadą wielokrotnego boosta
+  if (player.x <= 0) {
+    if (canWallBounceLeft) {
+      player.vy = -20;
+      canWallBounceLeft = false;
+    }
+    player.x = 0;
+  } else {
+    canWallBounceLeft = true;
   }
 
-  if (player.x < 0) player.x = 0;
-  if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+  if (player.x + player.width >= canvas.width) {
+    if (canWallBounceRight) {
+      player.vy = -20;
+      canWallBounceRight = false;
+    }
+    player.x = canvas.width - player.width;
+  } else {
+    canWallBounceRight = true;
+  }
 
   if (player.y > cameraY + canvas.height + 100) {
     gameOver = true;
@@ -263,7 +277,6 @@ document.addEventListener("keyup", e => {
   keys[e.code] = false;
 });
 
-// API do wysyłki wyniku do Google Sheets
 function sendScore() {
   const nick = document.getElementById("nickInput").value.trim();
   if (!nick) {
@@ -287,7 +300,6 @@ function sendScore() {
     document.getElementById("responseMsg").innerText = "Błąd wysyłania 😢";
   });
 }
-
 
 createInitialPlatforms();
 loop();
