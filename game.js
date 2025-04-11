@@ -6,8 +6,8 @@ canvas.height = 600;
 
 let cameraY = 0;
 let score = 0;
-let maxYReached = 500;
 let gameOver = false;
+let lastPlatformTouched = null;
 
 let player = {
   x: 180,
@@ -25,25 +25,26 @@ let player = {
 let keys = {};
 
 let platforms = [
-  { x: 150, y: 550, width: 100, height: 10 },
-  { x: 200, y: 400, width: 100, height: 10 },
-  { x: 100, y: 250, width: 100, height: 10 }
+  { id: 1, x: 150, y: 550, width: 100, height: 10, touched: false },
+  { id: 2, x: 200, y: 400, width: 100, height: 10, touched: false },
+  { id: 3, x: 100, y: 250, width: 100, height: 10, touched: false }
 ];
 
-// RESET
 function resetGame() {
   cameraY = 0;
   score = 0;
-  maxYReached = 500;
   gameOver = false;
+  lastPlatformTouched = null;
+
   player.x = 180;
   player.y = 500;
   player.vx = 0;
   player.vy = 0;
+
   platforms = [
-    { x: 150, y: 550, width: 100, height: 10 },
-    { x: 200, y: 400, width: 100, height: 10 },
-    { x: 100, y: 250, width: 100, height: 10 }
+    { id: 1, x: 150, y: 550, width: 100, height: 10, touched: false },
+    { id: 2, x: 200, y: 400, width: 100, height: 10, touched: false },
+    { id: 3, x: 100, y: 250, width: 100, height: 10, touched: false }
   ];
   loop();
 }
@@ -60,7 +61,6 @@ function update() {
   player.y += player.vy;
   player.grounded = false;
 
-  // Kolizje z platformami
   platforms.forEach(p => {
     if (
       player.x < p.x + p.width &&
@@ -71,39 +71,31 @@ function update() {
       player.y = p.y - player.height;
       player.vy = 0;
       player.grounded = true;
+
+      if (!p.touched) {
+        p.touched = true;
+        score += 1;
+      }
     }
   });
 
-  // Boczne odbicia – boost
-  if (player.y > cameraY && player.vy > 0) {
-    if (player.x <= 0 || player.x + player.width >= canvas.width) {
-      player.vy = -20; // boost od ściany
-    }
-  }
-
-  // Kamera
   if (player.y < cameraY + 200) {
     cameraY = player.y - 200;
   }
 
-  // Liczenie pięter (co 100px do góry)
-  if (player.y < maxYReached) {
-    score++;
-    maxYReached = player.y;
+  if (player.x <= 0 || player.x + player.width >= canvas.width) {
+    player.vy = -20;
   }
 
-  // Ograniczenia poziome
   if (player.x < 0) player.x = 0;
   if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
 
-  // Game over (spadek)
   if (player.y > cameraY + canvas.height + 100) {
     gameOver = true;
   }
 }
 
 function drawBackground() {
-  // Gradient z efektem "oponiarskim"
   let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
   gradient.addColorStop(0, "#1a0000");
   gradient.addColorStop(0.5, "#0d0d0d");
@@ -111,7 +103,6 @@ function drawBackground() {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Efekty bieżnika (linie + kręgi)
   ctx.strokeStyle = "#300";
   ctx.lineWidth = 2;
   for (let i = 0; i < canvas.height; i += 40) {
@@ -121,7 +112,6 @@ function drawBackground() {
     ctx.stroke();
   }
 
-  // Kręgi stylizowane na opony
   for (let i = 0; i < 5; i++) {
     ctx.beginPath();
     ctx.arc(
@@ -133,6 +123,18 @@ function drawBackground() {
     );
     ctx.stroke();
   }
+}
+
+function drawPlatform(p) {
+  const grad = ctx.createLinearGradient(p.x, p.y, p.x + p.width, p.y);
+  grad.addColorStop(0, "#ff3333");
+  grad.addColorStop(1, "#990000");
+  ctx.fillStyle = grad;
+  ctx.fillRect(p.x, p.y, p.width, p.height);
+
+  // cień
+  ctx.strokeStyle = "#550000";
+  ctx.strokeRect(p.x, p.y, p.width, p.height);
 }
 
 function drawPlayer() {
@@ -157,7 +159,6 @@ function drawGameOver() {
   ctx.fillText("KONIEC GRY", canvas.width / 2, canvas.height / 2 - 30);
   ctx.fillText(`Wynik: ${score} pięter`, canvas.width / 2, canvas.height / 2 + 10);
 
-  // Przycisk
   ctx.fillStyle = "#ff0000";
   ctx.fillRect(canvas.width / 2 - 70, canvas.height / 2 + 40, 140, 40);
   ctx.fillStyle = "#fff";
@@ -182,15 +183,12 @@ canvas.addEventListener("click", (e) => {
 
 function draw() {
   drawBackground();
+
   ctx.save();
   ctx.translate(0, -cameraY);
 
   drawPlayer();
-
-  ctx.fillStyle = "red";
-  platforms.forEach(p => {
-    ctx.fillRect(p.x, p.y, p.width, p.height);
-  });
+  platforms.forEach(drawPlatform);
 
   ctx.restore();
   drawScore();
