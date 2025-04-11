@@ -271,25 +271,22 @@ function sendScore() {
     return;
   }
 
-const data = {
-  nick: playerName,
-  wynik: floorsAchieved
-};
-fetch("https://script.google.com/macros/s/AKfycbzhyH7KCGgy7L9W0NbDB7t2FQ9a8HelpZHsU2PyQ137-qEFRTYlDJhngRYrmBNiRLIHvA/exec", {
-  method: "POST",
-  headers: {
-    "Content-Type": "text/plain;charset=utf-8"
-  },
-  body: JSON.stringify({ nick, wynik: score })
-})
-.then(res => res.text())
-.then(() => {
-  document.getElementById("responseMsg").innerText = "Wynik wysłany!";
-})
-.catch((err) => {
-  console.error("Błąd przy fetch:", err);
-  document.getElementById("responseMsg").innerText = "Błąd wysyłania 😢";
-});
+  fetch("https://script.google.com/macros/s/AKfycbzhyH7KCGgy7L9W0NbDB7t2FQ9a8HelpZHsU2PyQ137-qEFRTYlDJhngRYrmBNiRLIHvA/exec", {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({ nick, wynik: score })
+  })
+  .then(res => res.text())
+  .then(() => {
+    document.getElementById("responseMsg").innerText = "Wynik wysłany!";
+  })
+  .catch((err) => {
+    console.error("Błąd przy fetch:", err);
+    document.getElementById("responseMsg").innerText = "Błąd wysyłania 😢";
+  });
+}
 
 
 createInitialPlatforms();
