@@ -1,5 +1,3 @@
-// 🎮 game.js
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -81,6 +79,10 @@ function resetGame() {
   player.vy = 0;
 
   platformId = 0;
+  document.getElementById("formContainer").style.display = "none";
+  document.getElementById("responseMsg").innerText = "";
+  document.getElementById("nickInput").value = "";
+
   createInitialPlatforms();
   loop();
 }
@@ -206,6 +208,12 @@ function drawGameOver() {
   ctx.fillStyle = "#fff";
   ctx.font = "18px monospace";
   ctx.fillText("ZAGRAJ PONOWNIE", canvas.width / 2, canvas.height / 2 + 58);
+
+  drawSubmitForm();
+}
+
+function drawSubmitForm() {
+  document.getElementById("formContainer").style.display = "flex";
 }
 
 canvas.addEventListener("click", (e) => {
@@ -241,6 +249,30 @@ document.addEventListener("keydown", e => {
 document.addEventListener("keyup", e => {
   keys[e.code] = false;
 });
+
+// ✅ FUNKCJA: wysyłka wyniku do Google Sheets
+function sendScore() {
+  const nick = document.getElementById("nickInput").value.trim();
+  if (!nick) {
+    document.getElementById("responseMsg").innerText = "Podaj nick.";
+    return;
+  }
+
+  fetch("https://script.google.com/macros/s/AKfycbz8wzLAXKsUsjtMVgfWuna2_qonIY1R8eb_52N3PtWZh8Sb_lUtovvTxV694uLTtIov5g/exec", {
+    method: "POST",
+    body: JSON.stringify({ nick, score }),
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+    .then(res => res.text())
+    .then(() => {
+      document.getElementById("responseMsg").innerText = "Wynik wysłany!";
+    })
+    .catch(() => {
+      document.getElementById("responseMsg").innerText = "Błąd wysyłania 😢";
+    });
+}
 
 createInitialPlatforms();
 loop();
